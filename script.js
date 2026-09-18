@@ -1,118 +1,153 @@
-const OPENING_HOURS = {
-  0: [{ start: "18:00", end: "22:00" }],
-  1: [],
-  2: [],
-  3: [{ start: "18:00", end: "22:00" }],
-  4: [{ start: "18:00", end: "22:00" }],
-  5: [{ start: "18:00", end: "22:00" }],
-  6: [{ start: "18:00", end: "22:00" }],
+const ROME_TIMEZONE = "Europe/Rome";
+const INSTAGRAM_POPUP_DELAY = 1500;
+
+const OPENING_SCHEDULE = [
+  { day: 2, label: "Martedì", open: "12:00", close: "16:00" },
+  { day: 3, label: "Mercoledì", open: "12:00", close: "16:00" },
+  { day: 4, label: "Giovedì", open: "12:00", close: "16:00" },
+  { day: 4, label: "Giovedì", open: "18:00", close: "23:00" },
+  { day: 5, label: "Venerdì", open: "12:00", close: "16:00" },
+  { day: 5, label: "Venerdì", open: "18:00", close: "23:00" },
+  { day: 6, label: "Sabato", open: "12:00", close: "16:00" },
+  { day: 6, label: "Sabato", open: "18:00", close: "23:00" },
+  { day: 0, label: "Domenica", open: "18:00", close: "23:00" }
+];
+
+const WEEKDAY_MAP = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6
 };
 
-const DAY_NAMES = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
-
-function timeToMinutes(value) {
-  const [hours, minutes] = value.split(":").map(Number);
+function toMinutes(time) {
+  const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
 }
 
-function getRomeTimeParts(date = new Date()) {
+function formatClock(minutes) {
+  const hours = String(Math.floor(minutes / 60)).padStart(2, "0");
+  const mins = String(minutes % 60).padStart(2, "0");
+  return `${hours}:${mins}`;
+}
+
+function getRomeTime(date = new Date()) {
   const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Rome",
+    timeZone: ROME_TIMEZONE,
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
-    hourCycle: "h23",
+    hourCycle: "h23"
   });
 
   const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]));
-  const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
   return {
-    day: dayMap[parts.weekday],
-    minutes: Number(parts.hour) * 60 + Number(parts.minute),
+    day: WEEKDAY_MAP[parts.weekday],
+    minutes: Number(parts.hour) * 60 + Number(parts.minute)
   };
 }
 
-function findNextOpening(day, minutes) {
+function getDaySlots(day) {
+  return OPENING_SCHEDULE
+    .filter((entry) => entry.day === day)
+    .sort((a, b) => toMinutes(a.open) - toMinutes(b.open));
+}
+
+function getNextOpening(currentDay, currentMinutes) {
   for (let offset = 0; offset < 8; offset += 1) {
-    const nextDay = (day + offset) % 7;
-    const ranges = OPENING_HOURS[nextDay];
+    const day = (currentDay + offset) % 7;
+    const slots = getDaySlots(day);
 
-    for (const range of ranges) {
-      const start = timeToMinutes(range.start);
-
-      if (offset > 0 || start > minutes) {
-        return {
-          day: nextDay,
-          time: range.start,
-          label: `${DAY_NAMES[nextDay]} alle ${range.start}`,
-        };
+    for (const slot of slots) {
+      if (offset > 0 || currentMinutes < toMinutes(slot.open)) {
+        return { ...slot, offset };
       }
     }
-
-    minutes = -1;
   }
 
   return null;
 }
 
-function isOpen(date = new Date()) {
-  const { day, minutes } = getRomeTimeParts(date);
-  const ranges = OPENING_HOURS[day];
+function buildStatus() {
+  const { day, minutes } = getRomeTime();
+  const time = formatClock(minutes);
+  const current = getDaySlots(day).find(
+    (slot) => minutes >= toMinutes(slot.open) && minutes < toMinutes(slot.close)
+  );
 
-  for (const range of ranges) {
-    const start = timeToMinutes(range.start);
-    const end = timeToMinutes(range.end);
-
-    if (minutes >= start && minutes < end) {
-      return {
-        open: true,
-        closesAt: range.end,
-        nextOpen: null,
-      };
-    }
+  if (current) {
+    return {
+      open: true,
+      label: "Aperto ora",
+      detail: `Oggi fino alle ${current.close}.`,
+      time
+    };
   }
+
+  const next = getNextOpening(day, minutes);
+  const nextLabel = next && next.offset === 0 ? "oggi" : next && next.offset === 1 ? "domani" : next ? next.label : "";
+  const nextText = next ? `${nextLabel} alle ${next.open}` : "al prossimo turno";
 
   return {
     open: false,
-    closesAt: null,
-    nextOpen: findNextOpening(day, minutes),
+    label: "Chiuso ora",
+    detail: `Riapre ${nextText}.`,
+    time
   };
 }
 
-function initHeader() {
-  const header = document.querySelector("[data-header]");
-  const toggle = document.querySelector(".menu-toggle");
-  const nav = document.querySelector("#primary-navigation");
+function updateOpenStatus() {
+  const status = buildStatus();
+  const cards = document.querySelectorAll("[data-status-card]");
+  const badges = document.querySelectorAll("[data-open-status]");
+  const details = document.querySelectorAll("[data-status-detail]");
+  const times = document.querySelectorAll("[data-status-time]");
 
-  if (!header) return;
+  cards.forEach((card) => {
+    card.classList.toggle("is-open", status.open);
+    card.classList.toggle("is-closed", !status.open);
+    card.setAttribute("aria-label", `${status.label}. ${status.detail}`);
+  });
 
-  const updateHeader = () => {
-    header.classList.toggle("is-scrolled", window.scrollY > 12);
-  };
+  badges.forEach((badge) => {
+    badge.textContent = status.label;
+    badge.classList.toggle("is-open", status.open);
+    badge.classList.toggle("is-closed", !status.open);
+  });
 
-  updateHeader();
-  window.addEventListener("scroll", updateHeader, { passive: true });
+  details.forEach((detail) => {
+    detail.textContent = status.detail;
+  });
 
-  if (!toggle || !nav) return;
+  times.forEach((time) => {
+    time.textContent = status.time;
+  });
+}
+
+function initNavigation() {
+  const toggle = document.querySelector("[data-nav-toggle]");
+  const menu = document.querySelector("[data-nav-menu]");
+
+  if (!toggle || !menu) {
+    return;
+  }
 
   const closeMenu = () => {
-    document.body.classList.remove("is-menu-open");
+    document.body.classList.remove("is-nav-open");
     toggle.setAttribute("aria-expanded", "false");
-    toggle.setAttribute("aria-label", "Apri menu");
   };
 
   toggle.addEventListener("click", () => {
-    const willOpen = !document.body.classList.contains("is-menu-open");
-    document.body.classList.toggle("is-menu-open", willOpen);
-    toggle.setAttribute("aria-expanded", String(willOpen));
-    toggle.setAttribute("aria-label", willOpen ? "Chiudi menu" : "Apri menu");
+    const isOpen = document.body.classList.toggle("is-nav-open");
+    toggle.setAttribute("aria-expanded", String(isOpen));
   });
 
-  nav.addEventListener("click", (event) => {
-    if (event.target instanceof HTMLAnchorElement) {
-      closeMenu();
-    }
+  menu.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", closeMenu);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -122,83 +157,203 @@ function initHeader() {
   });
 }
 
-function updateOpeningStatus() {
-  const status = document.querySelector("[data-open-status]");
-  const label = document.querySelector("[data-open-label]");
-  const detail = document.querySelector("[data-open-detail]");
+function initHeaderState() {
+  const header = document.querySelector("[data-site-header]");
 
-  if (!status || !label || !detail) return;
-
-  const state = isOpen();
-  status.classList.toggle("is-closed", !state.open);
-
-  if (state.open) {
-    label.textContent = "Aperto ora";
-    detail.textContent = `Chiude alle ${state.closesAt}`;
+  if (!header) {
     return;
   }
 
-  label.textContent = "Chiuso ora";
-  detail.textContent = state.nextOpen ? `Riapre ${state.nextOpen.label}` : "Controlla gli orari";
+  const updateHeader = () => {
+    header.classList.toggle("is-scrolled", window.scrollY > 24);
+  };
+
+  updateHeader();
+  window.addEventListener("scroll", updateHeader, { passive: true });
 }
 
-function initCurrentYear() {
-  const year = document.querySelector("[data-current-year]");
+function initReveal() {
+  const elements = document.querySelectorAll(".reveal");
 
-  if (year) {
-    year.textContent = String(new Date().getFullYear());
+  if (!("IntersectionObserver" in window)) {
+    elements.forEach((element) => element.classList.add("is-visible"));
+    return;
   }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.16 }
+  );
+
+  elements.forEach((element) => observer.observe(element));
 }
 
 function initLegalLanguage() {
   const buttons = document.querySelectorAll("[data-lang-button]");
+  const panels = Array.from(document.querySelectorAll("[data-lang-panel]")).filter((panel) => !panel.closest(".site-header"));
 
-  if (!buttons.length) return;
+  if (!buttons.length || !panels.length) {
+    return;
+  }
 
-  const panels = document.querySelectorAll("[data-lang-panel]");
-  const legalContent = document.querySelector(".legal-content");
-  const description = document.querySelector('meta[name="description"]');
+  const getHashLanguage = () => (window.location.hash === "#privacy-en" ? "en" : "it");
 
-  const setLanguage = (language) => {
-    const isEnglish = language === "en";
+  const setLanguage = (language, updateHash = false) => {
+    const activeLanguage = language === "en" ? "en" : "it";
 
-    document.documentElement.lang = language;
-    document.body.dataset.legalLang = language;
-    document.title = isEnglish ? "Privacy Notice | Pizza 38 Bra" : "Privacy Policy | Pizza 38 Bra";
-
-    if (description) {
-      description.content = isEnglish
-        ? "Pizza 38 privacy notice: GitHub Pages hosting, no cookies or trackers, external links and data subject rights."
-        : "Informativa sul trattamento dei dati personali del sito Pizza 38: hosting GitHub Pages, assenza di cookie e tracciatori, collegamenti esterni e diritti degli interessati.";
-    }
-
-    if (legalContent) {
-      legalContent.setAttribute("aria-label", isEnglish ? "Privacy notice content" : "Contenuto dell'informativa privacy");
-    }
+    document.documentElement.lang = activeLanguage;
+    document.body.dataset.legalLang = activeLanguage;
 
     panels.forEach((panel) => {
-      panel.hidden = panel.dataset.langPanel !== language;
+      panel.hidden = panel.dataset.langPanel !== activeLanguage;
     });
 
     buttons.forEach((button) => {
-      const isActive = button.dataset.langButton === language;
+      const isActive = button.dataset.langButton === activeLanguage;
       button.classList.toggle("is-active", isActive);
       button.setAttribute("aria-pressed", String(isActive));
     });
+
+    if (updateHash) {
+      const nextHash = `#privacy-${activeLanguage}`;
+      if (window.location.hash !== nextHash) {
+        history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash}`);
+      }
+    }
   };
 
   buttons.forEach((button) => {
-    button.addEventListener("click", () => setLanguage(button.dataset.langButton));
+    button.addEventListener("click", () => {
+      setLanguage(button.dataset.langButton, true);
+    });
   });
+
+  window.addEventListener("hashchange", () => {
+    setLanguage(getHashLanguage());
+  });
+
+  setLanguage(getHashLanguage());
+}
+
+function initInstagramPopup() {
+  const popup = document.querySelector("[data-instagram-popup]");
+
+  if (!popup) {
+    return;
+  }
+
+  const dialog = popup.querySelector(".instagram-popup__dialog");
+  const overlay = popup.querySelector("[data-instagram-popup-overlay]");
+  const closeButtons = popup.querySelectorAll("[data-instagram-popup-close]");
+  const cta = popup.querySelector("[data-instagram-popup-cta]");
+  let previouslyFocused = null;
+  let popupClosed = false;
+
+  if (!dialog) {
+    return;
+  }
+
+  const getFocusableElements = () => Array.from(
+    dialog.querySelectorAll(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => element.offsetParent !== null);
+
+  const restoreFocus = () => {
+    if (previouslyFocused && typeof previouslyFocused.focus === "function") {
+      previouslyFocused.focus({ preventScroll: true });
+    }
+  };
+
+  const closePopup = () => {
+    popupClosed = true;
+    popup.classList.remove("is-active");
+    popup.hidden = true;
+    document.removeEventListener("keydown", handleKeydown);
+    restoreFocus();
+  };
+
+  function handleKeydown(event) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePopup();
+      return;
+    }
+
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const focusableElements = getFocusableElements();
+
+    if (!focusableElements.length) {
+      event.preventDefault();
+      dialog.focus({ preventScroll: true });
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const currentIndex = focusableElements.indexOf(document.activeElement);
+
+    event.preventDefault();
+
+    if (currentIndex === -1) {
+      (event.shiftKey ? lastElement : firstElement).focus();
+    } else if (event.shiftKey && document.activeElement === firstElement) {
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      firstElement.focus();
+    } else {
+      focusableElements[currentIndex + (event.shiftKey ? -1 : 1)].focus();
+    }
+  }
+
+  const openPopup = () => {
+    if (popupClosed) {
+      return;
+    }
+
+    previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    popup.hidden = false;
+
+    window.requestAnimationFrame(() => {
+      popup.classList.add("is-active");
+    });
+
+    document.addEventListener("keydown", handleKeydown);
+    const closeButton = closeButtons[0];
+    (closeButton || dialog).focus({ preventScroll: true });
+  };
+
+  closeButtons.forEach((button) => {
+    button.addEventListener("click", closePopup);
+  });
+
+  if (overlay) {
+    overlay.addEventListener("click", closePopup);
+  }
+
+  if (cta) {
+    cta.addEventListener("click", closePopup);
+  }
+
+  window.setTimeout(openPopup, INSTAGRAM_POPUP_DELAY);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initHeader();
-  updateOpeningStatus();
-  initCurrentYear();
+  initNavigation();
+  initHeaderState();
+  initReveal();
   initLegalLanguage();
-
-  window.setInterval(updateOpeningStatus, 60 * 1000);
+  initInstagramPopup();
+  updateOpenStatus();
+  window.setInterval(updateOpenStatus, 60000);
 });
-
-window.isOpen = isOpen;

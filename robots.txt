@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://pizza38.it/sitemap.xml
+Sitemap: https://manopizza.it/sitemap.xml

@@ -1,54 +1,59 @@
-# Pizza 38 Landing Page
+# Mano Pizza sito statico
 
-Sito statico vanilla HTML, CSS e JavaScript per Pizza 38, pizzeria artigianale a Bra.
+Sito statico one-page per Mano Pizza, pizzeria al taglio da asporto a Bra.
 
 ## Struttura
 
-- `index.html`: pagina principale con contenuto semantico, SEO di base, dati strutturati e asset locali.
-- `styles.css`: reset, variabili, layout responsive, componenti e animazioni.
-- `script.js`: menu mobile, stato header, anno corrente e funzione `isOpen()` per mostrare se il locale è aperto.
-- `404.html`: pagina di errore coerente con l'identita visiva.
-- `privacy.html`: informativa privacy bilingue IT/EN, collegata dal footer.
-- `CNAME`: dominio personalizzato `pizza38.it` per GitHub Pages.
-- `manifest.json`, `robots.txt`, `sitemap.xml`: file di supporto per browser, crawler e pubblicazione.
-- `images/`: logo e immagini fotografiche del sito.
-- `icons/`: favicon e icone PWA derivate dal logo.
-- `fonts/`: file WOFF2 locali e relative istruzioni.
+- `index.html`: pagina principale con hero, manifesto, menu, gallery, orari, foto del locale e contatti.
+- `privacy.html`: informativa privacy bilingue IT/EN per sito statico cookie-free, con dati legali del titolare.
+- `styles.css`: stile responsive senza dipendenze esterne obbligatorie.
+- `script.js`: menu mobile, stato header, animazioni leggere e stato aperto/chiuso.
+- `404.html`: pagina errore coerente con il sito.
+- `manifest.json`, `robots.txt`, `sitemap.xml`, `CNAME`: supporto base per PWA, crawler, SEO e dominio custom su GitHub Pages.
+- `_headers.example`: riferimento per hosting statici che supportano header custom. GitHub Pages non applica questo file.
+- `assets/`: logo e foto reali del locale/prodotto, con asset WebP rinominati con estensione corretta.
+- `assets/fonts/`: cartella predisposta per font self-hosted.
 
-## Uso locale
+## Orari configurati
 
-Il sito non richiede build o dipendenze. Puoi aprire `index.html` direttamente nel browser oppure servirlo con un server statico se vuoi testare URL e file di supporto:
-
-```bash
-python -m http.server 8080
-```
+Pranzo martedì-sabato 12:00-16:00, cena giovedì-domenica 18:00-23:00. Lunedì chiuso. Lo stato aperto/chiuso viene calcolato nel browser usando il fuso orario `Europe/Rome`, con supporto ai doppi turni giornalieri.
 
 ## Pubblicazione
 
-Carica l'intera cartella su un hosting statico. Prima del deploy definitivo verifica il dominio in:
+Il sito non richiede build: pubblicare il contenuto della cartella `output/` su GitHub Pages.
 
-- `index.html` nel tag canonical e nei metadati Open Graph, se serve un URL assoluto;
-- `robots.txt`;
-- `sitemap.xml`.
+Dominio finale configurato nei canonical, metadati social, dati strutturati, `robots.txt` e `sitemap.xml`:
 
-Il dominio impostato è `https://pizza38.it/`.
+```text
+https://manopizza.it
+```
 
-Il file `CNAME` è già configurato con `pizza38.it`. Dopo il collegamento DNS e la generazione del certificato in GitHub Pages, verificare che l'opzione **Enforce HTTPS** sia attiva nelle impostazioni del repository.
+## Privacy e servizi esterni
 
-## Asset e font
+Il sito e' impostato per restare cookie-free: non usa form, analytics, pixel, iframe, storage persistente nel browser o script esterni. Instagram e Google Maps sono semplici link esterni attivati solo dopo click dell'utente.
 
-Le immagini sono locali e arrivano dal progetto originale. Il sito non carica pi&ugrave; Google Fonts ed &egrave; predisposto per usare tre file WOFF2 locali con `font-display: swap`:
+Per la pubblicazione sono indicati in privacy policy:
 
-- `fonts/inter-latin-400-800.woff2`;
-- `fonts/bebas-neue-latin-400.woff2`;
-- `fonts/caveat-latin-400-700.woff2`.
+- GitHub Pages / GitHub, Inc. come hosting statico;
+- Fastly, Inc. come CDN/content delivery usata da GitHub Pages;
+- log tecnici di navigazione, incluso l'indirizzo IP, trattati dai fornitori tecnici per erogazione, sicurezza e diagnostica.
 
-Le istruzioni complete sono disponibili in `fonts/README.md`. Finché i file non vengono aggiunti, il browser usa i fallback definiti nel CSS senza effettuare richieste a Google.
+La mappa incorporata e' stata sostituita con l'immagine locale `assets/MappaStatica.png`, cliccabile insieme al bottone per aprire le indicazioni su Google Maps.
 
-## Integrazioni esterne
+## Font
 
-La sezione contatti include uno screenshot della mappa collegato alla scheda Google Maps. Se in futuro verranno aggiunti analytics, pixel o altri script non tecnici, andranno collegati a un sistema di consenso cookie prima del caricamento.
+Il sito e' predisposto per self-hostare Anton, usato come font display per titoli, brand, bottoni, prezzi e label forti. Il corpo testo resta su font di sistema per leggibilita'.
 
-## Note legali
+Il file e' gia' presente nel repository. Fonte originale:
 
-La Privacy Policy è pubblicata in `privacy.html` e collegata nel footer. Descrive la configurazione senza cookie o tracciatori, con font locali e hosting tramite GitHub Pages. Prima del deploy devono essere inseriti i tre file WOFF2 indicati sopra. Se cambiano servizi esterni o modalità di trattamento, il testo deve essere verificato e aggiornato prima della pubblicazione delle modifiche.
+```text
+https://fonts.gstatic.com/s/anton/v27/1Ptgg87LROyAm3Kz-C8.woff2
+```
+
+Percorso locale:
+
+```text
+assets/fonts/Anton-Regular.woff2
+```
+
+Fonte: Google Fonts / repository `google/fonts`, licenza SIL Open Font License 1.1.
