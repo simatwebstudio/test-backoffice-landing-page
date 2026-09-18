@@ -1,0 +1,35 @@
+{
+  "components": [
+    {
+      "definition": "components/nuova-instagram-tiktok/nuova-instagram-tiktok-nascosta/component.json",
+      "id": "nuova-instagram-tiktok-nascosta",
+      "version": "1.0.0"
+    },
+    {
+      "definition": "components/nuova-instagram-tiktok/instagram-tiktok-phone-banner/component.json",
+      "id": "instagram-tiktok-phone-banner",
+      "version": "1.0.0"
+    },
+    {
+      "definition": "components/menu/menu-original/component.json",
+      "id": "menu-original",
+      "version": "1.0.0"
+    },
+    {
+      "definition": "components/menu/menu-photo-cards/component.json",
+      "id": "menu-photo-cards",
+      "version": "1.0.0"
+    },
+    {
+      "definition": "components/gallery/gallery-original/component.json",
+      "id": "gallery-original",
+      "version": "1.0.0"
+    },
+    {
+      "definition": "components/gallery/gallery-mosaic/component.json",
+      "id": "gallery-mosaic",
+      "version": "1.0.0"
+    }
+  ],
+  "formatVersion": 1
+}

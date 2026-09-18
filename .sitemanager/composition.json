@@ -1,0 +1,38 @@
+{
+  "formatVersion": 1,
+  "sections": {
+    "gallery": {
+      "allowed": [
+        "gallery-original",
+        "gallery-mosaic"
+      ],
+      "optionsByComponent": {
+        "gallery-mosaic": {},
+        "gallery-original": {}
+      },
+      "selected": "gallery-original"
+    },
+    "menu": {
+      "allowed": [
+        "menu-original",
+        "menu-photo-cards"
+      ],
+      "optionsByComponent": {
+        "menu-original": {},
+        "menu-photo-cards": {}
+      },
+      "selected": "menu-original"
+    },
+    "nuova-instagram-tiktok": {
+      "allowed": [
+        "nuova-instagram-tiktok-nascosta",
+        "instagram-tiktok-phone-banner"
+      ],
+      "optionsByComponent": {
+        "instagram-tiktok-phone-banner": {},
+        "nuova-instagram-tiktok-nascosta": {}
+      },
+      "selected": "instagram-tiktok-phone-banner"
+    }
+  }
+}

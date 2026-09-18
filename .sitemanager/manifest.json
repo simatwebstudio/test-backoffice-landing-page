@@ -1,0 +1,10 @@
+{
+  "appVersion": "1.0.0",
+  "clientId": "mano-pizza-test-backoffice",
+  "componentsLockPath": ".sitemanager/components.lock.json",
+  "compositionPath": ".sitemanager/composition.json",
+  "contentPath": ".sitemanager/content.json",
+  "engineVersion": "1.4.0",
+  "formatVersion": 2,
+  "publishUrl": "https://manopizza.it/"
+}
